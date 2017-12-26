@@ -1,0 +1,6 @@
+
+	//写入属性$(ATTRIBUTENAME) 
+	if (!m_$(ATTRIBUTENAME).isNull())
+		writer.writeAttribute("$(ATTRIBUTENAME)", m_$(ATTRIBUTENAME));
+
+

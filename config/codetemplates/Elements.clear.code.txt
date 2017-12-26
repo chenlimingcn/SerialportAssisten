@@ -1,0 +1,7 @@
+	// 删除$(ELEMENTCLASS)列表 
+	foreach ($(ELEMENTCLASS)* pObj, m_$(ELEMENTNAME_K)List)
+	{
+		delete pObj;
+	}
+	m_$(ELEMENTNAME_K)List.clear();
+	return true;

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Communication>
+	<CmmSet name="COM2" baudRate="9600" parity="No" dataBits="8" stopBits="1" />
+	<ReceiveSet addTimeStamp="true" showByHex="true" />
+	<SendSet sendByHex="true" autoSend="true" rate="500" />
+</Communication>

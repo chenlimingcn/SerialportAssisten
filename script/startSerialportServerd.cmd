@@ -1,0 +1,3 @@
+@echo off
+title 串口服务，正在运行...
+%~dp0\..\bin\SerialportServerd -port COM2 -frm %~dp0\..\config\SerialportServer.frm

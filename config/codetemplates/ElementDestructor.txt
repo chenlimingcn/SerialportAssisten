@@ -1,0 +1,12 @@
+
+	//析构所有的$(ELEMENTNAME)元素对应的对象 
+	foreach($(ELEMENTCLASS)* pObj, m_$(ELEMENTNAME_K)List)
+	{
+		if (NULL != pObj)
+		{
+			pObj->destroy();
+			delete pObj;
+		}
+
+	}
+	m_$(ELEMENTNAME_K)List.clear();

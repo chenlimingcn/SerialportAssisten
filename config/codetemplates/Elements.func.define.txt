@@ -1,0 +1,25 @@
+	//获得元素$(ELEMENTNAME)的对象集合 
+	QList<$(ELEMENTCLASS)*> get_$(ELEMENTNAME_K)s () const;
+
+	//获得元素$(ELEMENTNAME)的对象集合中第一个元素
+	$(ELEMENTCLASS)* get_first_$(ELEMENTNAME_K) () const;
+
+	//添加一个$(ELEMENTNAME)元素对象
+	bool add_$(ELEMENTNAME_K)( $(ELEMENTCLASS)* pObj);
+
+	//删除一个$(ELEMENTNAME)元素对象
+	bool remove_$(ELEMENTNAME_K)( $(ELEMENTCLASS)* pObj);
+
+	//删除所有的$(ELEMENTNAME)元素对象
+	bool remove_all_$(ELEMENTNAME_K)s( bool bAlsoDelete = true);
+
+
+	//移动一个对象到队列的指定位置，如果idx为-1则移动到队列的末尾。
+	//函数返回移动后的位置
+	int move_$(ELEMENTNAME_K)($(ELEMENTCLASS)* pObj, int idx = -1);
+
+	//获得$(ELEMENTNAME)元素的个数
+	uint count_$(ELEMENTNAME_K)();
+
+	//获得$(ELEMENTNAME)元素对象在队列中的序号,如果没有找到，则返回-1
+	int get_$(ELEMENTNAME_K)_index($(ELEMENTCLASS)* pObj);

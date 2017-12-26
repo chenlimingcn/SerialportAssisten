@@ -1,0 +1,9 @@
+QString $(TYPECLASSNAME)::get_$(ATTTRIBUTE_NAME)()
+{
+	return m_$(ATTTRIBUTE_NAME); 
+}
+
+void $(TYPECLASSNAME)::set_$(ATTTRIBUTE_NAME)(QString val)
+{
+	m_$(ATTTRIBUTE_NAME) = val;
+}

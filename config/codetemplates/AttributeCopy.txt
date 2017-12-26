@@ -1,0 +1,2 @@
+	//拷贝属性$(ATTRIBUTENAME) 内容
+	m_$(ATTRIBUTENAME) = pOther->m_$(ATTRIBUTENAME);

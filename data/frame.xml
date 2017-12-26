@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- EB90EB90 04 02 00 01 00 03 0D -->
+<!-- EB90EB90 4C 02 00 01 24 00 00
+	 00 00 00 00 00 00 00 00 00 00
+	 00 00 00 00 00 00 00 00 00 00
+	 00 00 00 00 00 00 00 00 00 00
+	 00 00 00 00 00 00 00 00 00 00
+	 00 00 00 00 00 00 00 00 00 00
+	 00 00 00 00 00 00 00 00 00 00
+	 00 00 00 00 00 00 00 00 00 00
+	 27 0D -->
+<frame xmlns="http://www.xlm.com">
+	<send>
+		<data datacount="0" datatype="1" bitnum="16" />
+		<blockdata type="0" len="4" value="0xEB90EB90"/>
+		<blockdata type="0" len="1" value="0x04" />
+		<blockdata type="0" len="1" value="0x02" />
+		<blockdata type="0" len="1" value="0x00" />
+		<blockdata type="0" len="1" value="0x01" />
+		<blockdata type="0" len="1" value="0x00" />
+		<blockdata type="0" len="1" value="0x03" />
+		<blockdata type="0" len="1" value="0x0D" />
+	</send>
+	<recive>
+		<data datacount="0" datatype="1" bitnum="16" />
+		<blockdata type="0" len="4" value="0xEB90EB90"/>
+		<blockdata type="0" len="71" value="" />
+		<blockdata type="0" len="1" value="0x0D" />
+	</recive>
+</frame>

@@ -1,0 +1,253 @@
+$(INCLUDES)
+
+#include "Unknown_clsEle.h"
+
+
+///////////////////////////////////////////////////////////////////////////////
+// class $(TYPECLASSNAME) definition
+
+$(TYPECLASSNAME)* $(TYPECLASSNAME)::create_instance(const QString& elementName)
+{
+	$(TYPECLASSNAME)* pRes = new $(TYPECLASSNAME)("$(ELEMENTNAME)");
+	return pRes;
+}
+
+void $(TYPECLASSNAME)::destroy()
+{
+}
+
+QString $(TYPECLASSNAME)::get_content_value()
+{
+	return m_content_object;
+}
+void $(TYPECLASSNAME)::set_content_value(const QString& _value)
+{
+	m_content_object = _value;
+}
+
+void $(TYPECLASSNAME)::set_value_data(const QString& str)
+{
+	m_content_object = str;
+}
+
+$(TYPECLASSNAME)::$(TYPECLASSNAME)()
+	:$(BASECLASS)("$(ELEMENTNAME)")
+{
+		m_supportAnyAttribute = true; 
+		m_supportAny = true; 
+}
+
+$(TYPECLASSNAME)::$(TYPECLASSNAME)(const QString& elementName)
+	:$(BASECLASS)(elementName)
+{
+	m_supportAnyAttribute = true; 
+	m_supportAny = true; 
+
+}
+
+$(TYPECLASSNAME)::~$(TYPECLASSNAME)()
+{
+	clear();
+}
+
+$(TYPECLASSNAME)& $(TYPECLASSNAME)::operator= (const $(TYPECLASSNAME)& other)
+{
+	clear();
+	copy_from(&other);
+	return *this;
+}
+
+void $(TYPECLASSNAME)::copy_from(const $(TYPECLASSNAME)* pOther)
+{
+	if (pOther == NULL)
+		return;
+	$(BASECLASS)::copy_from(pOther);
+	$(COPYCODE)
+
+}
+
+void $(TYPECLASSNAME)::clear()
+{
+	$(ELEMENTS_CLEAR)
+	$(BASECLASS)::clear();
+}
+
+//Attributes
+$(ATTRIBUTE_FUNC_DECLARE)
+
+QString $(TYPECLASSNAME)::get_UnknownAttr(QString attr)
+{
+	if (m_unknowAttrs.contains(attr))
+	{
+		return m_unknowAttrs.value(attr);
+	}
+
+	return QString();
+}
+
+//Elements
+$(ELEMENTS_FUNC_DECLARE)
+
+QList<CUnknown_clsEle*> $(TYPECLASSNAME)::get_Unknown_clsEles() const
+{
+	return m_unknowEles;
+}
+
+CUnknown_clsEle* $(TYPECLASSNAME)::get_first_Unknown_clsEle() const
+{
+	if (m_unknowEles.isEmpty())
+		return NULL;
+
+	return m_unknowEles.at(0);
+}
+
+bool $(TYPECLASSNAME)::add_Unknown_clsEle(CUnknown_clsEle* pObj)
+{
+	if (pObj == NULL)
+		return false;
+	if (m_unknowEles.contains(pObj))
+		return true;
+	pObj->set_parent(this);
+	pObj->set_document(get_document());
+
+	m_unknowEles.push_back(pObj);
+
+	set_child(pObj);
+
+	if (m_document != NULL)
+		m_document->ObjectAdded(pObj);
+
+	return true;
+}
+
+bool $(TYPECLASSNAME)::remove_Unknown_clsEle(CUnknown_clsEle* pObj)
+{
+	if (!m_unknowEles.contains(pObj))
+		return false;
+
+	if (m_document != NULL)
+		m_document->ObjectPreDelete(pObj);
+
+	m_unknowEles.removeOne(pObj);
+	pObj->destroy();
+
+	return true;
+}
+
+bool $(TYPECLASSNAME)::remove_all_Unknown_clsEles(bool bAlsoDelete/* = true*/)
+{
+	foreach (CUnknown_clsEle* pObj, m_unknowEles)
+	{
+		if (m_document != NULL)
+			m_document->ObjectPreDelete(pObj);
+
+		pObj->destroy();
+	}
+
+	m_unknowEles.clear();
+
+	return true;
+}
+
+int $(TYPECLASSNAME)::move_Unknown_clsEle(CUnknown_clsEle* pObj, int idx/* = -1*/)
+{
+	if (pObj == NULL || !m_unknowEles.contains(pObj))
+		return -1;
+
+	int pos = idx;
+	if (pos < 0 || pos >= m_unknowEles.size())
+		pos = m_unknowEles.size() -1;
+
+	m_unknowEles.removeAll(pObj);
+	m_unknowEles.insert(pos,pObj);
+
+	return pos;
+}
+
+uint $(TYPECLASSNAME)::count_Unknown_clsEle()
+{
+	return m_unknowEles.count();
+}
+
+int $(TYPECLASSNAME)::get_Unknown_clsEle_index(CUnknown_clsEle* pObj)
+{
+	return m_unknowEles.indexOf(pObj);
+}
+
+QString $(TYPECLASSNAME)::get_attribute( const QString localName, const QString& namespaceURI)
+{
+	return $(BASECLASS)::get_attribute(localName, namespaceURI);
+
+}
+
+bool $(TYPECLASSNAME)::loadAttribute(const QString& localName, const QString& value, const QString& uri)
+{
+	
+
+	$(LOADATTRIBUTE)
+	
+// 	if (elementName() != "IED_CFG")
+// 		m_unknowAttrs.insert(localName,value);
+
+	if ($(BASECLASS)::loadAttribute(localName, value, uri))
+		return true;
+
+
+	return false;
+}
+bool $(TYPECLASSNAME)::saveAttribute( QXmlStreamWriter& writer ) const
+{
+	bool bResult = true;
+
+	$(SAVEATTRIBUTE)
+
+	for (QMap<QString,QString>::const_iterator iter = m_unknowAttrs.begin(); iter != m_unknowAttrs.end(); ++iter)
+	{
+		writer.writeAttribute(iter.key(),iter.value());
+	}
+
+	bResult &= $(BASECLASS)::saveAttribute(writer);
+
+	return bResult;
+
+}
+
+bool $(TYPECLASSNAME)::saveElement(QXmlStreamWriter& writer) const
+{
+	$(BASECLASS)::saveElement(writer);
+
+	$(SAVECODE)
+	
+	foreach (CUnknown_clsEle* pObj,m_unknowEles)
+	{
+		pObj->save(writer);
+	}
+
+	return true;
+}
+
+XSDComplexType* $(TYPECLASSNAME)::create_object(const QString& localName, const QString& uri)
+{
+	XSDComplexType* pType = $(BASECLASS)::create_object(localName, uri);
+	if (pType != NULL)
+		return pType;
+
+
+	if( uri != "")
+		return NULL;
+ 	$(CREATE_OBJECT)
+	{
+		CUnknown_clsEle* unknownObj = CUnknown_clsEle::create_instance(localName);
+		if (unknownObj == NULL)
+			return NULL;
+		unknownObj->set_document(get_document());
+		if (!add_Unknown_clsEle(unknownObj))
+		{
+			unknownObj->destroy();
+			return NULL;
+		}
+
+		return unknownObj;
+	}
+	return NULL;
+}

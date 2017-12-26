@@ -1,0 +1,5 @@
+	// 保存$(ELEMENTNAME) 
+	foreach($(ELEMENTCLASS)* pObj, m_$(ELEMENTNAME_K)List)
+	{
+		pObj->save(writer);
+	}

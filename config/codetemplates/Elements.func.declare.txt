@@ -1,0 +1,82 @@
+QList<$(ELEMENTCLASS)*> $(TYPECLASSNAME)::get_$(ELEMENTNAME_K)s () const 
+{
+	return m_$(ELEMENTNAME_K)List;
+}
+
+$(ELEMENTCLASS)* $(TYPECLASSNAME)::get_first_$(ELEMENTNAME_K) () const
+{
+	if (m_$(ELEMENTNAME_K)List.isEmpty())
+		return NULL;
+	return m_$(ELEMENTNAME_K)List.at(0);
+}
+
+bool $(TYPECLASSNAME)::add_$(ELEMENTNAME_K)( $(ELEMENTCLASS)* pObj)
+{
+	if (pObj == NULL)
+		return false;
+	if (m_$(ELEMENTNAME_K)List.contains(pObj))
+		return true;
+	
+	pObj->set_parent(this);
+	pObj->set_document(get_document());
+	
+	m_$(ELEMENTNAME_K)List.push_back(pObj);
+
+	set_child(pObj);
+	
+	if (m_document != NULL)
+		m_document->ObjectAdded(pObj);
+
+	return true;
+}
+
+bool $(TYPECLASSNAME)::remove_$(ELEMENTNAME_K)( $(ELEMENTCLASS)* pObj)
+{
+	if ( !m_$(ELEMENTNAME_K)List.contains(pObj))
+		return false;
+
+	if (m_document != NULL)
+		m_document->ObjectPreDelete(pObj);
+
+	m_$(ELEMENTNAME_K)List.removeOne(pObj);
+	pObj->destroy();
+
+	return true;
+}
+
+bool $(TYPECLASSNAME)::remove_all_$(ELEMENTNAME_K)s( bool bAlsoDelete/* = true*/)
+{
+	foreach ($(ELEMENTCLASS)* pObj, m_$(ELEMENTNAME_K)List)
+	{
+		if (m_document != NULL)
+			m_document->ObjectPreDelete(pObj);
+		pObj->destroy();
+	}
+	m_$(ELEMENTNAME_K)List.clear();
+	return true;
+}
+
+int $(TYPECLASSNAME)::move_$(ELEMENTNAME_K)($(ELEMENTCLASS)* pObj, int idx/* = -1*/)
+{
+	if (pObj == NULL || !m_$(ELEMENTNAME_K)List.contains(pObj))
+		return -1;
+
+	int pos = idx;
+	if (pos < 0 || pos >= m_$(ELEMENTNAME_K)List.size()) 
+		pos = m_$(ELEMENTNAME_K)List.size() - 1;
+
+	m_$(ELEMENTNAME_K)List.removeAll(pObj);
+	m_$(ELEMENTNAME_K)List.insert(pos, pObj);
+	return pos;
+
+}
+
+uint $(TYPECLASSNAME)::count_$(ELEMENTNAME_K)()
+{
+	return m_$(ELEMENTNAME_K)List.count();
+}
+
+int $(TYPECLASSNAME)::get_$(ELEMENTNAME_K)_index($(ELEMENTCLASS)* pObj)
+{
+	return m_$(ELEMENTNAME_K)List.indexOf(pObj);
+}

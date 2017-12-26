@@ -1,0 +1,10 @@
+	//读取属性$(ATTRIBUTENAME)的值 
+
+	if (localName == "$(ATTRIBUTENAME)")
+	{
+		m_$(ATTRIBUTENAME) = value;
+
+		return true;	
+	}
+	else
+	

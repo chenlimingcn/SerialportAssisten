@@ -1,0 +1,1 @@
+XmlBindingd.exe -f Communication.xml -api CMM_API -out .\code

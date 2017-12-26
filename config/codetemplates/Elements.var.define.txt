@@ -1,0 +1,1 @@
+	QList<$(ELEMENTCLASS)*> m_$(ELEMENTNAME_K)List; 

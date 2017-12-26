@@ -1,0 +1,14 @@
+
+	if (localName == "$(ELEMENTNAME)") 
+	{
+		$(ELEMENTCLASS)* pObj = $(ELEMENTCLASS)::create_instance("$(ELEMENTNAME)");
+		pObj->set_document( get_document() );
+		if (!add_$(ELEMENTNAME_K)(pObj))
+		{
+			pObj->destroy();
+			return NULL;
+		}
+
+		return pObj;
+	}
+	else 

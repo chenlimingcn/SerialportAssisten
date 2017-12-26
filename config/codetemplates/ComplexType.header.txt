@@ -1,0 +1,73 @@
+
+#ifndef $(TYPENAME_U)_H__
+#define $(TYPENAME_U)_H__
+
+#include <QObject>
+
+$(INCLUDES)
+
+//前向声明
+class CUnknown_clsEle;
+$(PREDEFINES)
+
+class $(EXPORTDEF) $(TYPECLASSNAME)  : public $(BASECLASS)
+{
+
+public:
+	static $(TYPECLASSNAME)* create_instance(const QString& elementName);
+	
+	//将元素内容设置为另一个元素的内容。已有元素将被全部析构。
+	$(TYPECLASSNAME)& operator= (const $(TYPECLASSNAME)& other);
+
+	//从另一个对象pOther中拷贝内容，已有内容将被全部析构
+	void copy_from(const $(TYPECLASSNAME)* pOther);
+
+	virtual XSDComplexType* create_object(const QString& localName, const QString& uri = "$(TARGETNAMESPACE)");
+
+//定义属性函数
+$(ATTRIBUTE_FUNC_DEFINE)
+	QString get_UnknownAttr(QString attr);
+
+//定义成员对象
+$(ELEMENTS_FUNC_DEFINE)
+
+
+	virtual QString get_attribute( const QString localName, const QString& namespaceURI = QString() );
+
+	virtual bool loadAttribute(const QString& localName, const QString& value, const QString& uri = "");
+
+	//保存属性
+	virtual bool saveAttribute( QXmlStreamWriter& writer ) const;
+
+	//保存元素
+	virtual bool saveElement(QXmlStreamWriter& writer) const;
+
+	//清除元素内容
+	virtual void clear();
+
+public:
+	//构造一个空对象
+	$(TYPECLASSNAME)::$(TYPECLASSNAME)();
+	$(TYPECLASSNAME)(const QString& elementName);
+	//析构对象
+	~$(TYPECLASSNAME)();
+
+//变量声明
+$(ATTRIBUTES_VAR_DEFINE)
+
+// 未知属性
+	QMap<QString,QString> m_unknowAttrs;
+
+//成员对象
+$(ELEMENTS_VAR_DEFINE)
+
+// 未知成员
+	QList<CUnknown_clsEle*> m_unknowEles;
+
+	QString m_content_object;
+
+};
+
+
+
+#endif //$(TYPENAME_U)_H__

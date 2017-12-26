@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/icon/SerialportAssisten.ico</file>
+        <file>resources/icon/off.png</file>
+        <file>resources/icon/on.png</file>
+    </qresource>
+</RCC>

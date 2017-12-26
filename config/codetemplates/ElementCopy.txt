@@ -1,0 +1,11 @@
+
+	//拷贝元素$(ELEMENTNAME)内容 
+	foreach($(ELEMENTCLASS)* pObj, pOther->m_$(ELEMENTNAME_K)List)
+	{
+		if (pObj == NULL)
+			continue;
+		$(ELEMENTCLASS)* pNewObj = $(ELEMENTCLASS)::create_instance(pObj->elementName());
+		add_$(ELEMENTNAME_K)(pNewObj);
+		pNewObj->copy_from(pObj);
+
+	}
