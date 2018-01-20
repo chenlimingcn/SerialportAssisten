@@ -105,7 +105,7 @@ void CCommunicationThread::run()
 		unsigned char* total_buff = (unsigned char*)m_buffArray->data(); // 当前数据buff
 		// 调试输出
 #ifdef _DEBUG
-		const char* str = "total:";
+		char* str = "total:";
 		CFrameOutPut::frameOuput((unsigned char*)str, strlen(str), 0);
 		CFrameOutPut::frameOuput(total_buff, total_len);
 #endif // _DEBUG

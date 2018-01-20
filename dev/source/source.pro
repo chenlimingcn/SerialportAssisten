@@ -5,6 +5,7 @@ SUBDIRS = Communication \
 	SerialportServer \
 	XmlBase \
 	XmlBinding \
+	xmlstreambinding \
 	SerialportAssisten \
 	esframework \
 	test

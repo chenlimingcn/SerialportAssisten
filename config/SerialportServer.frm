@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <SerialportServer>
-	<Device name="txtDevice" desc="字符回显">
-		<Frame name="hello" desc=""><!-- 当接收到Require帧,则发送Response -->
-			<Require value="48 65 6C 6C 6F" desc="Hello"/>
-			<Response value="48 6F 77 20 61 72 65 20 79 6F 75 21 21 21" desc="How are you!!!"/>
-		</Frame>
-	</Device>
 	<Device name="ps611" desc=" 充电模块">
 		<Frame name="vol" desc="模拟量查询"><!-- 当接收到Require帧,则发送Response -->
 			<Require value="EB 90 EB 90 04 01 00 01 00 02 0D" />

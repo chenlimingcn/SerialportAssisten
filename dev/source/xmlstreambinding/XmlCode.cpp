@@ -1,25 +1,26 @@
-Ôªø#include <QCoreApplication>
-#include <QDir>
+#include <QCoreApplication>
+
 #include <QFile>
 #include "XmlCode.h"
 #include <QDebug>
 #include <iostream>
-#include "XmlHelper.h"
 using namespace std;
 
 
-CXmlCode::CXmlCode(void)
+CXmlCode::CXmlCode(QObject* parent/* = 0*/)
+	: CAbstractXmlCode(parent)
 {
 	m_iedcfgDoc = new QDomDocument();
+	m_libName.clear();
 }
 
 
-CXmlCode::~CXmlCode(void)
+CXmlCode::~CXmlCode()
 {
 	delete m_iedcfgDoc;
 }
 
-bool CXmlCode::readfile( const QString& filename )
+bool CXmlCode::readfile( QString filename )
 {
 	QFile file(filename);
 	QString errorMsg;
@@ -53,106 +54,95 @@ bool CXmlCode::build()
 	// cout << "root:" << docElem.tagName().toStdString() <<endl;
 	QDomNamedNodeMap attributes = docElem.attributes();
 	int c = attributes.count();
-	// ÁßªÈô§Ê†πÊï∞ÊçÆÂ±ûÊÄß
+	// “∆≥˝∏˘ ˝æ› Ù–‘
 	for (int i = 0; i < c; ++i)
 	{
 		QDomNode attNode = attributes.item(0);
 		QDomAttr attr = attNode.toAttr();
 		docElem.removeAttribute(attr.name());
 	}
+
+	generateExportfile();
+	
 	generateDocment(docElem);
 
-	generateUnknownTag();
-
 	generateCls(docElem);
+
+	generateAllh();
 
 	return true;
 }
 
-QString CXmlCode::outPath() const
+void CXmlCode::generateExportfile()
 {
-	QString path = CXmlCodeBase::outPath() + "/code";
-	QDir dir;
-	if (!dir.exists(path))
+	QString hCode;
+	if (!CXmlCodeHelper::readCodetemplates("Exportfile.header.tpl", hCode))
+		return ;
+
+	hCode.replace("$(LIBNAME_UPPERCASE)", m_libName.toUpper());
+	hCode.replace("$(EXPORTDEF)", exportName());
+
+	if (!CXmlCodeHelper::writeCode(m_outpath + "/" + m_libName + "_global.h", hCode))
 	{
-		if (!dir.mkdir(path))
-			return CXmlCodeBase::outPath();
+		cout << "generate export h file error!" << endl;
+		return ;
 	}
 
-	return path;
+	QString sCode;
+	if (!CXmlCodeHelper::readCodetemplates("Exportfile.source.tpl", sCode))
+		return ;
+	sCode.replace("$(LIBNAME)", m_libName);
+
+	if (!CXmlCodeHelper::writeCode(m_outpath + "/" + m_libName + "_global.cpp", sCode))
+	{
+		cout << "generate export cpp file error!" << endl;
+		return ;
+	}
 }
 
 void CXmlCode::generateDocment(QDomNode node)
 {
 	QString hCode;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/Document.header.tpl", hCode))
+	if (!CXmlCodeHelper::readCodetemplates("Document.header.tpl", hCode))
 		return ;
 
-	QString libName = libraryName();
+	QString libName = m_libName;
 	if (!libName.isEmpty())
 	{
 		libName[0] = libName[0].toUpper();
-	}
 
+	}
 	hCode.replace("$(LIBNAME_UPPERCASE)", libName.toUpper());
 	QString rootname;
 	QDomElement ele = node.toElement();
 	if (ele.isNull())
 		return ;
 	rootname = ele.tagName();
-
+	
 	if (rootname.isEmpty())
 		return ;
-
+	
 	hCode.replace("$(ROOTNAME)", rootname + "Tag");
-	hCode.replace("$(ROOTNAME_K)", rootname);
 	hCode.replace("$(LIBNAME)", libName);
 
-	if (!CXmlHelper::writeCode(outPath() + "/" + libName + "Document.h", hCode))
+	if (!CXmlCodeHelper::writeCode(libName + "Document.h", hCode))
 		return ;
 
 	QString sCode;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/Document.source.tpl", sCode))
+	if (!CXmlCodeHelper::readCodetemplates("Document.source.tpl", sCode))
 		return ;
 
 	sCode.replace("$(LIBNAME)", libName);
 	sCode.replace("$(ROOTNAME)", rootname + "Tag");
 	sCode.replace("$(ROOTNAME_K)", rootname);
 
-	CXmlHelper::writeCode(outPath() + "/" + libName + "Document.cpp", sCode);
-}
-
-void CXmlCode::generateUnknownTag()
-{
-	QString libn = libraryName();
-	if (libn.isEmpty())
-		return ;
-	
-	libn[0] = libn[0].toUpper();
-
-	QString hCode;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/UnknownTag.header.tpl", hCode))
-		return ;
-
-	hCode.replace("$(LIBNAME)", libn);
-
-	if (!CXmlHelper::writeCode(outPath() + "/" + libn + "UnknownTag.h", hCode))
-		return ;
-
-	QString sCode;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/UnknownTag.source.tpl", sCode))
-		return ;
-
-	sCode.replace("$(LIBNAME)", libn);
-
-	if (!CXmlHelper::writeCode(outPath() + "/" + libn + "UnknownTag.cpp", sCode))
-		return ;
+	CXmlCodeHelper::writeCode(libName + "Document.cpp", sCode);
 }
 
 void CXmlCode::generateCls( QDomNode node )
 {
-	QList<QString> childrenNames;	//	Á±ªÂêçÂàóË°®
-	QList<QString> attributesNames;	// Â±ûÊÄßÂêçÂàóË°®
+	QList<QString> childrenNames;	//	¿‡√˚¡–±Ì
+	QList<QString> attributesNames;	//  Ù–‘√˚¡–±Ì
 
 	if (node.isNull())
 		return ;
@@ -160,7 +150,7 @@ void CXmlCode::generateCls( QDomNode node )
 	if (element.isNull())
 		return ;
 
-	// Â§ÑÁêÜÊàêÂëò
+	// ¥¶¿Ì≥…‘±
 	QDomNodeList nodes = node.childNodes();
 	int c = nodes.count();
 	for (int i = 0; i<c; ++i)
@@ -177,7 +167,7 @@ void CXmlCode::generateCls( QDomNode node )
 		generateCls(n);
 	}
 
-	// Â§ÑÁêÜÂ±ûÊÄß
+	// ¥¶¿Ì Ù–‘
 	QDomNamedNodeMap attributes = node.attributes();
 	int count = attributes.count();
 	for (int i = 0; i <= count-1 ; ++i)
@@ -187,26 +177,40 @@ void CXmlCode::generateCls( QDomNode node )
 		attributesNames.append(attr.name());
 	}
 
-	// ÁîüÊàêÁ±ª‰ª£Á†Å
+	// …˙≥…¿‡¥˙¬Î
 	QString clsName = element.tagName()+"Tag";
 	if (!generateClsCode(clsName,childrenNames,attributesNames))
-		cout << "C" << clsName.toStdString() << "class generate error" <<endl;
-
-	// ÁîüÊàêall
-	QString allCode;
-	allCode = "#ifndef " + libraryName().toUpper() + "_ALLTAGS_H__\n";
-	allCode = allCode + "#define " + libraryName().toUpper() + "_ALLTAGS_H__\n\n";
-	foreach (QString clsTag, m_haveCode)
-	{
-		if (clsTag.isEmpty())
-			continue;
-		allCode = allCode + "#include \"" + clsTag.right(clsTag.size()-1) + ".h\"\n\n";
-	}
-	allCode = allCode + "#endif //" + libraryName().toUpper() + "_ALLTAGS_H__";
-
-	CXmlHelper::writeCode(outPath() + "/" + libraryName() + "_AllTags.h", allCode);
+		cout << clsName.toStdString() << "class generate errors" <<endl;
+	
+	if (!m_eleNames.contains(clsName))
+		m_eleNames << clsName;
 }
 
+void CXmlCode::generateAllh()
+{
+	// ¥¶¿ÌAll.h
+	QString filename = m_outpath + "/" + m_libName + "_AllTags.h";
+	QFile file(filename);
+	if (!file.open(QFile::WriteOnly))
+	{
+		cout << m_libName.toStdString() + "_AllTags.h open error!" << endl;
+		return ;
+	}
+	QString strH;
+	strH = "#ifndef " + m_libName.toUpper() + "_H__\n" +
+		"#define " +  m_libName.toUpper() + "_H__\n\n";
+
+	file.write(strH.toStdString().c_str());
+	foreach (QString clsName, m_eleNames)
+	{
+		QString iCode = "#include \"" + clsName + ".h\"\n";
+		file.write(iCode.toStdString().c_str());
+	}
+	QString strE = "\n#endif // " + m_libName.toUpper() + "_H__\n";
+	file.write(strE.toStdString().c_str());
+	file.close();
+
+}
 bool CXmlCode::generateClsCode( const QString clsName,const QList<QString> childrenNames,const QList<QString> attrNames )
 {
 	if (m_haveCode.contains(clsName))
@@ -217,11 +221,13 @@ bool CXmlCode::generateClsCode( const QString clsName,const QList<QString> child
 	
 	if (!genClsCodeH(clsName,childrenNames,attrNames))
 	{
+		cout << clsName.toStdString() << ".h create fail!" <<endl;
 		flag =  false;
 	}
 
 	if (!genClsCodeCpp(clsName,childrenNames,attrNames))
 	{
+		cout << clsName.toStdString() << ".cpp create fail!" << endl;
 		flag = false;
 	}
 	return flag;
@@ -232,23 +238,18 @@ bool CXmlCode::genClsCodeH( const QString clsName,const QList<QString> childrenN
 	QString clsCode;
 	QString tmp;
 
-	QString filname = templateDir() + "/ComplexType.header.tpl";
-	if (!CXmlHelper::readCodetemplates(filname, clsCode))
-	{
+	if (!CXmlCodeHelper::readCodetemplates("ComplexType.header.tpl", clsCode))
 		return false;
-	}
 
-	// ÂÆèÂ§ÑÁêÜ
-	clsCode.replace("$(TYPENAME_U)",clsName);
+	// ∫Í¥¶¿Ì
+	clsCode.replace("$(TYPECLASSNAME_U)",clsName);
 
-	// Â§¥Êñá‰ª∂Â§ÑÁêÜ
+	// Õ∑Œƒº˛¥¶¿Ì
 	QString includesCode;
-	includesCode = "#include <QList>\n";
-	includesCode += "#include \"" + libraryName() + "_global.h\"\n";
-	includesCode += "#include \"xsdcomplextype.h\"\n";
+	clsCode.replace("$(LIBNAME)", m_libName);
 	clsCode.replace("$(INCLUDES)",includesCode);
 
-		// ÂêëÂâçÂ£∞Êòé
+	// œÚ«∞…˘√˜
 	QString preDeclareCode;
 	foreach (QString child,childrenNames)
 	{
@@ -257,66 +258,51 @@ bool CXmlCode::genClsCodeH( const QString clsName,const QList<QString> childrenN
 	}
 	clsCode.replace("$(PREDEFINES)",preDeclareCode);
 
-	// Â±ûÊÄßÂ§ÑÁêÜ
+	//  Ù–‘¥¶¿Ì
 	QString attrCode;
 	QString attrVarCode;
 	if (!genClsCodeHAttr(attrNames,attrCode,attrVarCode))
 		return false;
-	clsCode.replace("$(ATTRIBUTE_FUNC_DEFINE)",attrCode);
-	clsCode.replace("$(ATTRIBUTES_VAR_DEFINE)",attrVarCode);
+	clsCode.replace("$(ATTRIBUTES_FUNC_HEADER)",attrCode);
+	clsCode.replace("$(ATTRIBUTES_VAR_HEADER)",attrVarCode);
 
-	// ÊàêÂëòÂ§ÑÁêÜ
+	// ≥…‘±¥¶¿Ì
 	QString eleCode;
 	QString eleVarCode;
 	if (!genClsCodeHEle(childrenNames,eleCode,eleVarCode))
 		return false;
-	clsCode.replace("$(ELEMENTS_FUNC_DEFINE)",eleCode);
-	clsCode.replace("$(ELEMENTS_VAR_DEFINE)",eleVarCode);
+	clsCode.replace("$(ELEMENTS_FUNC_HEADER)",eleCode);
+	clsCode.replace("$(ELEMENTS_VAR_HEADER)",eleVarCode);
 
 	clsCode.replace("$(TYPENAME)",clsName);
-	clsCode.replace("$(EXPORTDEF)",libraryName().toUpper());
-	clsCode.replace("$(BASECLASS)","XSDComplexType");
+	clsCode.replace("$(EXPORTDEF)", exportName());
 
-	QString libN = libraryName();
-	if (!libN.isEmpty())
-	{
-		libN[0] = libN[0].toUpper();
-		clsCode.replace("$(LIBNAME)", libN);
-	}
-	else
-	{
-		clsCode.replace("$(LIBNAME)", "");
-	}
-
-	//Â§ÑÁêÜÁ±ªÂêç
-	clsCode.replace("$(TYPECLASSNAME)","C"+clsName);
+	//¥¶¿Ì¿‡√˚
+	clsCode.replace("$(TYPECLASSNAME)", clsName);
 		
-	// ‰øùÂ≠òÊàêÊñá‰ª∂
-	filname = outPath() + "/" + clsName+".h";
-	if (!CXmlHelper::writeCode(filname, clsCode))
-		return false;
-
-	return true;
+	// ±£¥Ê≥…Œƒº˛
+	return CXmlCodeHelper::writeCode(m_outpath + "/" +clsName+".h", clsCode);
 }
 
 bool CXmlCode::genClsCodeHAttr( const QList<QString>& attrNames,QString& attrCode,QString& attrVarCode )
 {
+	QString tmpFun;
+	QString tmpVar;
 	QString tmp;
-	QString strFun;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/Attribute.func.header.tpl", strFun))
+	
+	if (!CXmlCodeHelper::readCodetemplates("Attribute.func.header.tpl", tmpFun))
 		return false;
 
-	QString strVar;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/Attribute.var.header.tpl", strVar))
+	if (!CXmlCodeHelper::readCodetemplates("Attribute.var.header.tpl", tmpVar))
 		return false;
 
 	foreach (QString attr, attrNames)
 	{
-		tmp = strFun;
+		tmp = tmpFun;
 		tmp.replace("$(ATTTRIBUTE_NAME)",attr);
 		attrCode += tmp;
 
-		tmp = strVar;
+		tmp = tmpVar;
 		tmp.replace("$(ATTTRIBUTE_NAME)",attr);
 		attrVarCode += tmp;
 	}
@@ -326,24 +312,25 @@ bool CXmlCode::genClsCodeHAttr( const QList<QString>& attrNames,QString& attrCod
 
 bool CXmlCode::genClsCodeHEle( const QList<QString>& childrenNames,QString& eleCode,QString& eleVarCode )
 {
+	QString tmpFun;
+	QString tmpVar;
 	QString tmp;
-	QString strFun;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/Elements.func.header.tpl", strFun))
+
+	if (!CXmlCodeHelper::readCodetemplates("Elements.func.header.tpl", tmpFun))
 		return false;
 
-	QString strVar;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/Elements.var.header.tpl", strVar))
+	if (!CXmlCodeHelper::readCodetemplates("Elements.var.header.tpl", tmpVar))
 		return false;
 
 	foreach (QString child,childrenNames)
 	{
-		tmp = strFun;
+		tmp = tmpFun;
 		tmp.replace("$(ELEMENTCLASS)","C"+child);
 		tmp.replace("$(ELEMENTNAME_K)",child);
 		tmp.replace("$(ELEMENTNAME)",child);
 		eleCode += tmp;
 
-		tmp = strVar;
+		tmp = tmpVar;
 		tmp.replace("$(ELEMENTCLASS)","C"+child);
 		tmp.replace("$(ELEMENTNAME_K)",child);
 		eleVarCode += tmp;
@@ -355,12 +342,11 @@ bool CXmlCode::genClsCodeHEle( const QList<QString>& childrenNames,QString& eleC
 bool CXmlCode::genClsCodeCpp( const QString clsName,const QList<QString> childrenNames,const QList<QString> attrNames )
 {
 	QString clsCode;
-	QString tmp;
 
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/ComplexType.source.tpl", clsCode))
+	if (!CXmlCodeHelper::readCodetemplates("ComplexType.source.tpl", clsCode))
 		return false;
 	
-	// Â§ÑÁêÜÂ§¥Êñá‰ª∂
+	// ¥¶¿ÌÕ∑Œƒº˛
 	QString includesCode;
 	includesCode = "#include \""+clsName+".h\"\n";
 	foreach (QString child, childrenNames)
@@ -369,109 +355,90 @@ bool CXmlCode::genClsCodeCpp( const QString clsName,const QList<QString> childre
 	}
 	clsCode.replace("$(INCLUDES)",includesCode);
 
-	// Â§ÑÁêÜÂ±ûÊÄßÂáΩÊï∞	
+	// ¥¶¿Ì Ù–‘∫Ø ˝	
 	QString attrFuncDeclareCode;
 	if (!genClsCodeCppAttr(attrNames,attrFuncDeclareCode))
 		return false;
-	clsCode.replace("$(ATTRIBUTE_FUNC_DECLARE)",attrFuncDeclareCode);
+	clsCode.replace("$(ATTRIBUTE_FUNC_SOURCE)",attrFuncDeclareCode);
 	
-	// Â§ÑÁêÜÊàêÂëòÂáΩÊï∞
+	// ¥¶¿Ì≥…‘±∫Ø ˝
 	QString childFuncCode;
 	if (!genClsCodeCppEle(childrenNames,childFuncCode))
 		return false;
-	clsCode.replace("$(ELEMENTS_FUNC_DECLARE)",childFuncCode);
+	clsCode.replace("$(ELEMENTS_FUNC_SOURCE)",childFuncCode);
 
-	// Â§ÑÁêÜÂàõÂª∫
+	// ¥¶¿Ì¥¥Ω®
 	QString createObjCode;
 	if (!genClsCodeCppCreateObj(childrenNames,createObjCode))
 		return false;
 	clsCode.replace("$(CREATE_OBJECT)",createObjCode);
 
-	// Â§ÑÁêÜ‰øùÂ≠òÊàêÂëò
+	// ¥¶¿Ì±£¥Ê≥…‘±
 	QString saveCode;
 	if (!genClsCodeCppSave(childrenNames,saveCode))
 		return false;
-	clsCode.replace("$(SAVECODE)",saveCode);
+	clsCode.replace("$(ELEMENTS_SAVE)",saveCode);
 
-	// Â§ÑÁêÜ‰øùÂ≠òÂ±ûÊÄß
+	// ¥¶¿Ì±£¥Ê Ù–‘
 	QString saveAttr;
 	if (!genClsCodeCppSaveAttr(attrNames,saveAttr))
 		return false;
-	clsCode.replace("$(SAVEATTRIBUTE)",saveAttr);
+	clsCode.replace("$(ATTRIBUTE_SAVE)",saveAttr);
 
-	// Â§ÑÁêÜËØªÂÖ•Â±ûÊÄß
+	// ¥¶¿Ì∂¡»Î Ù–‘
 	QString loadAttrCode;
 	if (!genClsCodeCppLoadAttr(attrNames,loadAttrCode))
 		return false;
-	clsCode.replace("$(LOADATTRIBUTE)",loadAttrCode);
+	clsCode.replace("$(ATTRIBUTE_READ)",loadAttrCode);
 
-	// Â§ÑÁêÜclear
+	// ¥¶¿Ìclear
 	QString clearCode;
 	if (!genClsCodeCppClear(childrenNames,clearCode))
 		return false;
 	clsCode.replace("$(ELEMENTS_CLEAR)",clearCode);
 	
-	// Â§ÑÁêÜcopy
-	QString membercopyCode;
-	QString attrcopyCode;
-	if (!genClsCodeCppCopy(childrenNames,membercopyCode))
-		return false;
-	if (!genClsCodeCppCopyAttr(attrNames, attrcopyCode))
-		return false;
-	clsCode.replace("$(COPYCODE)",membercopyCode+attrcopyCode);
+// 	// ¥¶¿Ìcopy
+// 	QString copyCode;
+// 	if (!genClsCodeCppCopy(childrenNames,copyCode))
+// 		return false;
+// 	clsCode.replace("$(COPYCODE)",copyCode);
 	
-	// Â§ÑÁêÜÁ±ªÂêç
+	// ¥¶¿Ì¿‡√˚
 	QString className = clsName;
-	className.replace("Tag","");	//  ÊääÂêéÈù¢ÁöÑEleÂêéÁºÄÂéªÊéâ
+	className.replace("Tag","");	//  ∞—∫Û√ÊµƒEle∫Û◊∫»•µÙ
 	clsCode.replace("$(TYPECLASSNAME)","C"+clsName);
-	clsCode.replace("$(BASECLASS)","XSDComplexType");
 	clsCode.replace("$(ELEMENTNAME)",className);
 
-	QString libN = libraryName();
-	if (!libN.isEmpty())
-	{
-		libN[0] = libN[0].toUpper();
-		clsCode.replace("$(LIBNAME)", libN);
-	}
-	else
-	{
-		clsCode.replace("$(LIBNAME)", "");
-	}
-
-	// ‰øùÂ≠òÊàêÊñá‰ª∂
-	if (!CXmlHelper::writeCode(outPath() + "/" + clsName + ".cpp", clsCode))
-		return false;
-
-	return true;
+	// ±£¥Ê≥…Œƒº˛
+	return CXmlCodeHelper::writeCode(m_outpath + "/" + clsName+".cpp", clsCode);
 }
 
 bool CXmlCode::genClsCodeCppAttr( const QList<QString>& attrNames,QString& code )
 {
 	QString tmp;
-	QString strFun;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/Attribute.func.source.tpl", strFun))
+	QString tmpFun;
+	if (!CXmlCodeHelper::readCodetemplates("Attribute.func.source.tpl", tmpFun))
 		return false;
-	
+
 	foreach (QString attrName,attrNames)
 	{
-		tmp = strFun;
+		tmp = tmpFun;
 		tmp.replace("$(ATTTRIBUTE_NAME)",attrName);
 		code += tmp;
 	}
-
 	return true;
 }
 
 bool CXmlCode::genClsCodeCppEle( const QList<QString>& childrenNames,QString& code )
 {
 	QString tmp;
-	QString strFun;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/Elements.func.source.tpl", strFun))
+	QString tmpFun;
+	if (!CXmlCodeHelper::readCodetemplates("Elements.func.source.tpl", tmpFun))
 		return false;
 
 	foreach (QString childName,childrenNames)
 	{
-		tmp = strFun;
+		tmp = tmpFun;
 		tmp.replace("$(ELEMENTCLASS)","C"+childName);
 		tmp.replace("$(ELEMENTNAME_K)",childName);
 		code += tmp;
@@ -483,13 +450,13 @@ bool CXmlCode::genClsCodeCppEle( const QList<QString>& childrenNames,QString& co
 bool CXmlCode::genClsCodeCppCreateObj( const QList<QString>& childrenNames,QString & code )
 {
 	QString tmp;
-	QString strTmp;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/ReadElements.tpl", strTmp))
+	QString tmpEle;
+	if (!CXmlCodeHelper::readCodetemplates("ElementsRead.tpl", tmpEle))
 		return false;
 
 	foreach (QString childName,childrenNames)
 	{
-		tmp = strTmp;
+		tmp = tmpEle;
 		tmp.replace("$(ELEMENTCLASS)","C"+childName);
 		tmp.replace("$(ELEMENTNAME_K)",childName);
 		childName.replace("Tag","");
@@ -503,17 +470,15 @@ bool CXmlCode::genClsCodeCppCreateObj( const QList<QString>& childrenNames,QStri
 bool CXmlCode::genClsCodeCppSave( const QList<QString>& childrenNames,QString& code )
 {
 	QString tmp;
-	QString strFun;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/ElementSave.tpl", strFun))
+	QString tmpEle;
+	if (!CXmlCodeHelper::readCodetemplates("ElementsWrite.tpl", tmpEle))
 		return false;
 
 	foreach (QString childName,childrenNames)
 	{
-		tmp = strFun;
+		tmp = tmpEle;
 		tmp.replace("$(ELEMENTCLASS)","C"+childName);
-		tmp.replace("$(ELEMENTNAME_K)",childName);
-		childName.replace("Ele","");
-		tmp.replace("$(ELEMENTNAME",childName);
+		tmp.replace("$(ELEMENTNAME)",childName);
 		code += tmp;
 	}
 
@@ -523,14 +488,14 @@ bool CXmlCode::genClsCodeCppSave( const QList<QString>& childrenNames,QString& c
 bool CXmlCode::genClsCodeCppSaveAttr( const QList<QString>& attrNames,QString& code )
 {
 	QString tmp;
-	QString strTmp;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/WriteAttribute.tpl", strTmp))
+	QString tmpAttr;
+	if (!CXmlCodeHelper::readCodetemplates("AttributeWrite.tpl", tmpAttr))
 		return false;
 
 	foreach (QString attrName,attrNames)
 	{
-		tmp = strTmp;
-		tmp.replace("$(ATTRIBUTENAME)",attrName);
+		tmp = tmpAttr;
+		tmp.replace("$(ATTTRIBUTE_NAME)",attrName);
 		code += tmp;
 	}
 
@@ -540,14 +505,14 @@ bool CXmlCode::genClsCodeCppSaveAttr( const QList<QString>& attrNames,QString& c
 bool CXmlCode::genClsCodeCppLoadAttr(const QList<QString>& attrNames,QString& code)
 {
 	QString tmp;
-	QString strTmp;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/ReadAttribute.tpl", strTmp))
+	QString tmpAttr;
+	if (!CXmlCodeHelper::readCodetemplates("AttributeRead.tpl", tmpAttr))
 		return false;
 
 	foreach (QString attr,attrNames)
 	{
-		tmp = strTmp;
-		tmp.replace("$(ATTRIBUTENAME)",attr);
+		tmp = tmpAttr;
+		tmp.replace("$(ATTTRIBUTE_NAME)",attr);
 		code += tmp;
 	}
 
@@ -557,13 +522,13 @@ bool CXmlCode::genClsCodeCppLoadAttr(const QList<QString>& attrNames,QString& co
 bool CXmlCode::genClsCodeCppClear( const QList<QString>& childrenNames,QString& code )
 {
 	QString tmp;
-	QString strTmp;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/ElementDestructor.tpl", strTmp))
+	QString tmpDes;
+	if (!CXmlCodeHelper::readCodetemplates("ElementDestructor.tpl", tmpDes))
 		return false;
 
 	foreach (QString child,childrenNames)
 	{
-		tmp = strTmp;
+		tmp = tmpDes;
 		tmp.replace("$(ELEMENTNAME_K)",child);
 		tmp.replace("$(ELEMENTCLASS)","C"+child);
 		child.replace("Tag","");
@@ -574,19 +539,19 @@ bool CXmlCode::genClsCodeCppClear( const QList<QString>& childrenNames,QString& 
 	return true;
 }
 
-bool CXmlCode::genClsCodeCppCopy(const QList<QString> childrenNames,QString& code)
+bool CXmlCode::genClsCodeCppCopy(const QList<QString> childrenNames,QString code)
 {
 	QString tmp;
-	QString strTmp;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/ElementCopy.tpl", strTmp))
+	QString tmpCpy;
+	if (!CXmlCodeHelper::readCodetemplates("ElementCopy.txt", tmpCpy))
 		return false;
 
 	foreach (QString child,childrenNames)
 	{
-		tmp = strTmp;
-		tmp.replace("$(ELEMENTNAME)", child);
+		tmp = tmpCpy;
 		tmp.replace("$(ELEMENTNAME_K)",child);
 		tmp.replace("$(ELEMENTCLASS)","C"+child);
+		child.replace("Tag","");
 		tmp.replace("$(ELEMENTNAME)",child);
 		code += tmp;
 	}
@@ -594,24 +559,49 @@ bool CXmlCode::genClsCodeCppCopy(const QList<QString> childrenNames,QString& cod
 	return true;
 }
 
-bool CXmlCode::genClsCodeCppCopyAttr( const QList<QString> attrNames, QString& code )
+QString CXmlCode::exportName()
 {
-	QString tmp;
-	QString strTmp;
-	if (!CXmlHelper::readCodetemplates(templateDir() + "/AttributeCopy.tpl", strTmp))
-		return false;
+	if (!m_libName.isEmpty())
+		return m_libName.toUpper()+"_API";
+	return "";
+}
 
-	foreach (QString attrName, attrNames)
+bool CXmlCodeHelper::readCodetemplates( const QString& filename, QString& strCode )
+{
+	QString abFilename = QCoreApplication::applicationDirPath() + "/../config/xmlstreambinding/codetemplates/" + filename;
+
+	QFile file(abFilename);
+	if (!file.open(QIODevice::ReadOnly|QFile::Text))
 	{
-		tmp = strTmp;
-		tmp.replace("$(ATTRIBUTENAME)", attrName);
-		code += tmp;
+		cout <<  "template file " << abFilename.toStdString() << " read error!" << endl;
+		file.close();
+		return false;
 	}
+
+	QTextStream in(&file);
+	in.setCodec("UTF-8");
+	strCode = in.readAll();
+	file.close();
 
 	return true;
 }
 
-QString CXmlCode::templateDir()
+bool CXmlCodeHelper::writeCode( const QString& filename , const QString& strCode )
 {
-	return QCoreApplication::applicationDirPath() + "/../config/xmlbinding/codetemplates";
+	QFile codeFile(filename);
+	if (!codeFile.open(QIODevice::WriteOnly | QFile::Text))
+	{
+		cout << "write "+filename.toStdString()+".h"+" error!" << endl;
+		codeFile.close();
+		return false;
+	}
+	QTextStream out(&codeFile);
+	out.setCodec("ANSI");
+	out << strCode;
+	out.flush();
+	codeFile.close();
+
+	return true;
 }
+
+

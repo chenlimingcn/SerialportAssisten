@@ -7,7 +7,7 @@ for /r . %%i in (.) do (
 	if exist "%%i\*.pro" (
 		cd "%%i"
 		echo "%%i"
-		qmake -tp vc
+		qmake -tp vc -r
 	)
 )
 

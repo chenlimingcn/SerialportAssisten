@@ -1,1 +1,1 @@
-XmlBindingd.exe -f Communication.xml -api CMM_API -out .\code
+xmlstreambindingd.exe -f ..\config\Communication.xml -lib cmm -out .\code

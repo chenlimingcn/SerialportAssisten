@@ -63,7 +63,7 @@ bool CRequire::compare( unsigned char* buff, int len, int& index )
 		{
 			// µ÷ÊÔÊä³ö
 #ifdef _DEBUG
-			const char* str = "memcmp:";
+			char* str = "memcmp:";
 			CFrameOutPut::frameOuput((unsigned char*)str,strlen(str), 0);
 			CFrameOutPut::frameOuput(&buff[i],m_len);
 			CFrameOutPut::frameOuput(m_buff, m_len);

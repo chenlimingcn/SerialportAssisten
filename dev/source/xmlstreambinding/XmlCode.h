@@ -1,36 +1,52 @@
-ï»¿#ifndef XMLCODE_H__
+/****************************************************
+*	filename:  XmlCode.h
+*	version:  version 1.0
+*	Copyright (C) 2014 Shanghai SidTeam.
+*	author:  
+*	create at:  2014-08-03
+*	describe:  coding
+*	modify£º
+*****************************************************/
+
+#ifndef XMLCODE_H__
 #define XMLCODE_H__
 
+
 #include <QDomDocument>
-#include <QList>
+#include "QStringList"
 
-#include "XmlCodeBase.h"
+#include "AbstractXmlCode.h"
 
-class CXmlCode :public CXmlCodeBase
+class CXmlCode :public CAbstractXmlCode
 {
 public:
-	CXmlCode(void);
-	~CXmlCode(void);
+	CXmlCode(QObject* parent = 0);
+	~CXmlCode();
 	
-	// è¯»æ–‡ä»¶
-	virtual bool readfile(const QString& filename);
+	// ÉèÖÃ¿âÃû
+	void setLibName(QString val){ m_libName = val; }
 
-	// åˆ›å»ºç”Ÿæˆä»£ç å‡½æ•°
+	// ÉèÖÃÊä³öÄ¿Â¼
+	void setOutPath(const QString& val = QString(".")) {  m_outpath = val; }
+	// ¶ÁÎÄ¼ş
+	bool readfile(QString filename);
+
+	// ´´½¨Éú³É´úÂëº¯Êı
 	virtual bool build();
 
-	virtual QString outPath() const;
-
 protected:
-	// ç”Ÿæˆæ–‡æ¡£ç±»
+	// Éú³Éµ¼³öÉùÃ÷
+	void generateExportfile();
+
 	void generateDocment(QDomNode node);
 
-	// ç”ŸæˆæœªçŸ¥èŠ‚ç‚¹
-	void generateUnknownTag();
-
-	// ä¸€ä¸ªèŠ‚ç‚¹çš„ç”Ÿæˆå‡½æ•°
+	// Ò»¸ö½ÚµãµÄÉú³Éº¯Êı
 	void generateCls(QDomNode node);
 	
-	// ç”Ÿæˆç±»çš„ä»£ç 
+	// Éú³ÉAll.h
+	void generateAllh();
+
+	// Éú³ÉÀàµÄ´úÂë
 	bool generateClsCode(const QString clsName,const QList<QString> childrenNames,const QList<QString> attrNames);
 
 	bool genClsCodeH(const QString clsName,const QList<QString> childrenNames,const QList<QString> attrNames);
@@ -51,18 +67,27 @@ protected:
 
 	bool genClsCodeCppClear(const QList<QString>& childrenNames,QString& code);
 
-	bool genClsCodeCppCopy(const QList<QString> childrenNames,QString& code);
+	bool genClsCodeCppCopy(const QList<QString> childrenNames,QString code);
 
-	bool genClsCodeCppCopyAttr(const QList<QString> attrNames, QString& code);
-
-	QString templateDir();
-
+private:
+	QString exportName();
 private:
 	QDomDocument* m_iedcfgDoc;
 
 	QList<QString> m_haveCode;
 
+	QStringList m_eleNames;
+
+	QString m_libName;
+	QString m_outpath;
 };
 
+class CXmlCodeHelper
+{
+public:
+	static bool readCodetemplates(const QString& filename, QString& strCode);
+
+	static bool writeCode(const QString& filename , const QString& strCode);
+};
 
 #endif // XMLCODE_H__
